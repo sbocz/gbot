@@ -38,7 +38,7 @@ var _ = Describe("Database", func() {
 
 	Context("Initializing a new database", func() {
 		It("should return a database", func() {
-			testDb := database.NewDb("foo")
+			testDb := database.NewDb("foo.db")
 			Expect(testDb).NotTo(BeNil())
 		})
 	})
