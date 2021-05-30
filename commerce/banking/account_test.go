@@ -1,7 +1,7 @@
-package bank_test
+package banking_test
 
 import (
-	"gbot/commerce/bank"
+	"gbot/commerce/banking"
 	"time"
 
 	"github.com/diamondburned/arikawa/v2/discord"
@@ -15,32 +15,33 @@ var _ = Describe("Account", func() {
 		testStartingBalance = 123
 		approxTime          = time.Now().UTC()
 		oneDayAgo           = approxTime.AddDate(0, 0, -1)
-		periodMillis        = 60 * 60 * 1000 // 1 hour
-		periods             = 24             // one day
+		periodMillis        = time.Hour
+		periods             = 24 // one day
 		interestRate        = 10
 		expectedInterest    = periods * interestRate
 
-		sut *bank.Account
+		sut *banking.Account
 	)
 
 	Context("Creating a new Account", func() {
 		It("should not error", func() {
-			sut = bank.NewAccount(testUserId, testStartingBalance)
+			sut = banking.NewAccount(testUserId, testStartingBalance, time.Now().UTC())
 		})
 		It("should have the correct values", func() {
-			sut = bank.NewAccount(testUserId, testStartingBalance)
+			creationDate := time.Now().UTC().Add(-time.Hour * 100000)
+			sut = banking.NewAccount(testUserId, testStartingBalance, creationDate)
 			Expect(sut.UserId).To(Equal(testUserId))
 			Expect(sut.Balance).To(Equal(testStartingBalance))
 			Expect(sut.InterestValue).To(Equal(10))
-			Expect(sut.Age).To(BeTemporally("~", approxTime, time.Second))
-			Expect(sut.LastInterest).To(BeTemporally("~", approxTime, time.Second))
+			Expect(sut.CreationDate).To(BeTemporally("~", creationDate, time.Second))
+			Expect(sut.LastInterest).To(BeTemporally("~", creationDate, time.Second))
 		})
 	})
 
 	Context("CalculateInterest", func() {
 		When("interest was last paid one day ago", func() {
 			BeforeEach(func() {
-				sut = bank.NewAccount(testUserId, testStartingBalance)
+				sut = banking.NewAccount(testUserId, testStartingBalance, time.Now().UTC())
 				sut.LastInterest = oneDayAgo
 			})
 			It("should not error", func() {
@@ -53,7 +54,7 @@ var _ = Describe("Account", func() {
 		})
 		When("interest is in the future", func() {
 			BeforeEach(func() {
-				sut = bank.NewAccount(testUserId, testStartingBalance)
+				sut = banking.NewAccount(testUserId, testStartingBalance, time.Now().UTC())
 				sut.LastInterest = approxTime.AddDate(0, 0, 1)
 			})
 			It("should not error", func() {
@@ -66,7 +67,7 @@ var _ = Describe("Account", func() {
 		})
 		When("interest is in the past but less than the period", func() {
 			BeforeEach(func() {
-				sut = bank.NewAccount(testUserId, testStartingBalance)
+				sut = banking.NewAccount(testUserId, testStartingBalance, time.Now().UTC())
 				sut.LastInterest = approxTime
 			})
 			It("should not error", func() {
