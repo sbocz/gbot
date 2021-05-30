@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"gbot/inspiration"
+	"math/rand"
 
 	"github.com/diamondburned/arikawa/v2/bot"
 	"github.com/diamondburned/arikawa/v2/gateway"
@@ -32,4 +33,8 @@ func (bot *Bot) Ping(*gateway.MessageCreateEvent) (string, error) {
 func (bot *Bot) Inspire(m *gateway.MessageCreateEvent) (string, error) {
 	resp, err := inspiration.NewInspirationalMessage()
 	return resp, err
+}
+
+func (bot *Bot) Choose(_ *gateway.MessageCreateEvent, choices ...string) (string, error) {
+	return choices[rand.Intn(len(choices))], nil
 }

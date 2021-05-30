@@ -7,6 +7,7 @@ import (
 	"gbot/database"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/diamondburned/arikawa/v2/bot"
 	"github.com/diamondburned/arikawa/v2/utils/handler"
@@ -18,21 +19,24 @@ import (
 func main() {
 	godotenv.Load()
 
-	var dbFile = os.Getenv("DATABASE_FILE")
-	var db = database.NewDb(dbFile)
+	dbFile := os.Getenv("DATABASE_FILE")
+	db := database.NewDb(dbFile)
 	defer db.Shutdown()
 
-	var token = os.Getenv("BOT_TOKEN")
+	token := os.Getenv("BOT_TOKEN")
 	if token == "" {
 		log.Fatalln("No $BOT_TOKEN given.")
 	}
-	var prefix = os.Getenv("BOT_PREFIX")
+	prefix := os.Getenv("BOT_PREFIX")
 	if token == "" {
 		prefix = "!"
 		log.Println("No $BOT_PREFIX given. Defaulting to '!'")
 	}
+	denyListString := os.Getenv("YELL_DENYLIST")
+	denyListString = strings.ToLower(denyListString)
+	denyList := strings.Split(denyListString, ",")
 
-	misc.Initialize(db)
+	misc.Initialize(db, denyList)
 
 	commands := &commands.Bot{}
 
