@@ -34,6 +34,18 @@ func (db *DB) Shutdown() {
 	db.boltDb.Close()
 }
 
+func (d *DB) CreateBucketIfNotExists(bucketType BucketType) error {
+	err := d.boltDb.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketType))
+		return err
+	})
+
+	if err != nil {
+		return fmt.Errorf("Error creating bucket %s: %s", bucketType, err)
+	}
+	return nil
+}
+
 func (d *DB) Put(bucketType BucketType, key string, value interface{}) error {
 	valueToWrite, err := json.Marshal(value)
 	if err != nil {
@@ -96,7 +108,8 @@ func (db *DB) GetRandom(bucketType BucketType) ([]byte, error) {
 			return nil
 		}
 
-		// Loop until a result is found. If the uuid in Seek is larger than the largest written result nil is return and we should re-seek
+		// Loop until a result is found. If the uuid in Seek is larger than the largest written
+		// result nil is return and we should re-seek
 		for {
 			_, result = cursor.Seek([]byte(uuid.NewString()))
 			if result != nil {

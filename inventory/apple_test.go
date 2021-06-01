@@ -8,11 +8,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const (
-	flavor string = "sweet"
-)
-
 var _ = Describe("Apple", func() {
+	var (
+		flavor string = "sweet"
+	)
 	Context("Creating a new Apple", func() {
 		It("should not be nil", func() {
 			sut := inventory.NewApple(flavor)
