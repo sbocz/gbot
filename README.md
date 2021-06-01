@@ -7,6 +7,7 @@ Configure the environment variables manually or use the `.env` file to configure
 - `BOT_TOKEN`: Unique discord bot secret token. See [discord docs](https://discord.com/developers/docs/topics/oauth2) for more info
 - `BOT_PREFIX`: Prefix to trigger commands. eg. if set to `bob ` then you can use `bob ping` to ping the bot.
 - `DATABASE_FILE` BoltDB database file to use. This will be created if it does not already exist.
+- `YELL_DENYLIST`: Comma separated list of strings to censor when repeating messages from other users in the yell command.
 
 ## Testing
 Test all modules using `go test ./... -v`
