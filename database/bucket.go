@@ -1,13 +1,16 @@
 package database
 
+import "fmt"
+
 type BucketType string
 
 const (
-	BankAccounts BucketType = "BankAccounts"
-	StockData    BucketType = "StockData"
-	UserNotes    BucketType = "UserNotes"
-	ShoutPhrases BucketType = "ShoutPhrases"
-	Tests        BucketType = "Tests"
+	BankAccounts  BucketType = "BankAccounts"
+	StockData     BucketType = "StockData"
+	UserNotes     BucketType = "UserNotes"
+	ShoutPhrases  BucketType = "ShoutPhrases"
+	InventoryData BucketType = "InventoryData"
+	Tests         BucketType = "Tests"
 )
 
 type Bucket struct {
@@ -15,8 +18,12 @@ type Bucket struct {
 	bType BucketType
 }
 
-func NewBucket(db *DB, bucketType BucketType) *Bucket {
-	return &Bucket{db: db, bType: bucketType}
+func NewBucket(db *DB, bucketType BucketType) (*Bucket, error) {
+	err := db.CreateBucketIfNotExists(bucketType)
+	if err != nil {
+		return nil, fmt.Errorf("Could not initialize bucket of type %s: %v", bucketType, err)
+	}
+	return &Bucket{db: db, bType: bucketType}, nil
 }
 
 func (b *Bucket) Put(key string, value interface{}) error {

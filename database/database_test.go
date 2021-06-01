@@ -43,6 +43,13 @@ var _ = Describe("Database", func() {
 		})
 	})
 
+	Context("CreateBucketIfNotExists", func() {
+		It("should not error", func() {
+			err := sut.CreateBucketIfNotExists(testBucketType)
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+	})
+
 	Context("Put", func() {
 		It("should not error on write", func() {
 			err := sut.Put(testBucketType, testKey, testStruct)
