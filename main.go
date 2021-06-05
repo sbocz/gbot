@@ -1,9 +1,8 @@
 package main
 
 import (
-	"gbot/commands"
-	"gbot/commands/debug"
-	"gbot/commands/misc"
+	"gbot/cmd"
+	"gbot/commerce/banking"
 	"gbot/database"
 	"log"
 	"os"
@@ -36,19 +35,23 @@ func main() {
 	denyListString = strings.ToLower(denyListString)
 	denyList := strings.Split(denyListString, ",")
 
-	misc.Initialize(db, denyList)
+	cmd.Initialize(db, denyList)
+	bank, err := banking.NewBank(db)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	commands := &commands.Bot{}
+	gbot := cmd.NewBot()
 
-	wait, err := bot.Start(token, commands, func(ctx *bot.Context) error {
+	wait, err := bot.Start(token, gbot, func(ctx *bot.Context) error {
 		ctx.HasPrefix = bot.NewPrefix(prefix)
 		ctx.EditableCommands = true
 		ctx.State.PreHandler = handler.New()
 		ctx.State.PreHandler.Synchronous = true
-		ctx.State.PreHandler.AddHandler(misc.YellHandler(ctx))
+		ctx.State.PreHandler.AddHandler(cmd.YellHandler(ctx))
 
-		// Subcommand demo, but this can be in another package.
-		ctx.MustRegisterSubcommand(&debug.Debug{})
+		ctx.MustRegisterSubcommand(&cmd.Debug{})
+		ctx.MustRegisterSubcommand(cmd.NewBankCmd(bank))
 
 		return nil
 	})

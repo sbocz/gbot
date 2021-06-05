@@ -1,4 +1,4 @@
-package inspiration
+package apis
 
 import (
 	"io/ioutil"
@@ -9,7 +9,7 @@ const (
 	generate_url = "https://inspirobot.me/api?generate=true"
 )
 
-func NewInspirationalMessage() (string, error) {
+func GetInspirobotMessage() (string, error) {
 	resp, err := http.Get(generate_url)
 	if err != nil {
 		return "", err
