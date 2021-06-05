@@ -1,4 +1,4 @@
-package misc
+package cmd
 
 import (
 	"encoding/json"
@@ -20,6 +20,16 @@ var denyMap map[string]bool
 type YelledMessage struct {
 	Author  discord.UserID
 	Message string
+}
+
+func Initialize(db *database.DB, denyList []string) error {
+	bucket, err := database.NewBucket(db, database.ShoutPhrases)
+	if err != nil {
+		return fmt.Errorf("could not initialize misc commands: %v", err)
+	}
+
+	initYeller(bucket, denyList)
+	return nil
 }
 
 func initYeller(b *database.Bucket, denyList []string) {

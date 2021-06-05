@@ -44,7 +44,7 @@ func (b *Bank) Balance(userId discord.UserID) (int, error) {
 }
 
 // Deposits the provided value into the account for the user provided.
-// Returns the value after the deposit and an error if one occurred during the operation.
+// Returns an error if one occurred during the operation.
 func (b *Bank) Deposit(userId discord.UserID, value int) error {
 	if value < 1 {
 		return fmt.Errorf("Cannot deposit a value less than 1")
@@ -61,7 +61,7 @@ func (b *Bank) Deposit(userId discord.UserID, value int) error {
 
 // Withdraws the provided value from the user's account. Withdrawals are
 // only allowed for positive values and cannot leave the account with a negative balance.
-// Returns the value after the withdrawal and an error if one occurred during the operation.
+// Returns an error if one occurred during the operation.
 func (b *Bank) Withdraw(userId discord.UserID, value int) error {
 	if value < 1 {
 		return fmt.Errorf("Cannot withdraw a value less than 1")
