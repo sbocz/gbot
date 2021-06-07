@@ -1,6 +1,7 @@
 package banking_test
 
 import (
+	"fmt"
 	"gbot/commerce/banking"
 	"gbot/database"
 	"time"
@@ -13,7 +14,8 @@ import (
 var _ = Describe("Bank", func() {
 	var (
 		testUserId            = discord.UserID(1234)
-		testNonExistantUserId = discord.UserID(12345)
+		testUserId2           = discord.UserID(12345)
+		testNonExistantUserId = discord.UserID(123456)
 		testDb                = database.NewDb("testing.db")
 
 		sut *banking.Bank
@@ -150,14 +152,17 @@ var _ = Describe("Bank", func() {
 				account := banking.NewAccount(testUserId, 0, time.Now().UTC())
 				sut.SaveAccount(account)
 			})
-			It("should update account last interest date and not change the balance", func() {
-				err := sut.PayInterest(testUserId)
+			It("should not update the account", func() {
 				account, _ := sut.FetchAccount(testUserId)
+				oldInterestDate := account.LastInterest
+
+				err := sut.PayInterest()
+				account, _ = sut.FetchAccount(testUserId)
 
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(account.Balance).To(Equal(0))
-				Expect(account.CreationDate).Should(BeTemporally("<", account.LastInterest))
-				Expect(account.LastInterest).Should(BeTemporally("~", time.Now().UTC(), time.Second))
+				Expect(account.CreationDate).Should(Equal(account.LastInterest))
+				Expect(account.LastInterest).Should(Equal(oldInterestDate))
 			})
 		})
 		When("account is old", func() {
@@ -166,7 +171,7 @@ var _ = Describe("Bank", func() {
 				sut.SaveAccount(account)
 			})
 			It("should update account last interest date and increase the balance", func() {
-				err := sut.PayInterest(testUserId)
+				err := sut.PayInterest()
 				account, _ := sut.FetchAccount(testUserId)
 
 				Expect(err).ShouldNot(HaveOccurred())
@@ -174,6 +179,39 @@ var _ = Describe("Bank", func() {
 				Expect(account.CreationDate).Should(BeTemporally("<", account.LastInterest))
 				Expect(account.LastInterest).Should(BeTemporally("~", time.Now().UTC(), time.Second))
 			})
+		})
+		When("there are multiple old accounts", func() {
+			BeforeEach(func() {
+				account := banking.NewAccount(testUserId, 0, time.Now().UTC().Add(-time.Hour*24))
+				sut.SaveAccount(account)
+				account = banking.NewAccount(testUserId2, 0, time.Now().UTC().Add(-time.Hour*24))
+				sut.SaveAccount(account)
+			})
+			It("should udpate all of them", func() {
+				err := sut.PayInterest()
+				account, _ := sut.FetchAccount(testUserId)
+				account2, _ := sut.FetchAccount(testUserId2)
+
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(account.Balance == 0).NotTo(BeTrue())
+				Expect(account.CreationDate).Should(BeTemporally("<", account.LastInterest))
+				Expect(account.LastInterest).Should(BeTemporally("~", time.Now().UTC(), time.Second))
+
+				Expect(account2.Balance == 0).NotTo(BeTrue())
+				Expect(account2.CreationDate).Should(BeTemporally("<", account2.LastInterest))
+				Expect(account2.LastInterest).Should(BeTemporally("~", time.Now().UTC(), time.Second))
+			})
+		})
+	})
+
+	Context("PrintBalances", func() {
+		It("should not err", func() {
+			text, err := sut.PrintBalances()
+
+			Expect(err).ShouldNot(HaveOccurred())
+			fmt.Println("------STARTING BALANCES------")
+			fmt.Println(text)
+			fmt.Println("-------ENDING BALANCES-------")
 		})
 	})
 })

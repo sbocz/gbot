@@ -10,7 +10,6 @@ const (
 	UserNotes     BucketType = "UserNotes"
 	ShoutPhrases  BucketType = "ShoutPhrases"
 	InventoryData BucketType = "InventoryData"
-	Tests         BucketType = "Tests"
 )
 
 type Bucket struct {
@@ -32,6 +31,10 @@ func (b *Bucket) Put(key string, value interface{}) error {
 
 func (b *Bucket) Get(key string) ([]byte, error) {
 	return b.db.Get(b.bType, key)
+}
+
+func (b *Bucket) Keys() ([][]byte, error) {
+	return b.db.Keys(b.bType)
 }
 
 func (b *Bucket) PutRandom(value interface{}) error {
