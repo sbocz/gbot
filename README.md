@@ -10,11 +10,11 @@ Configure the environment variables manually or use the `.env` file to configure
 - `YELL_DENYLIST`: Comma separated list of strings to censor when repeating messages from other users in the yell command.
 
 ## Testing
-Test all modules using `go test ./... -v`
+- `go test ./... -v`
 
 ## Manging dependencies
-`go install`
-`go mod tidy`
+- `go install`
+- `go mod tidy`
 
 ## Running
-`go run gbot`
+- `go run gbot`

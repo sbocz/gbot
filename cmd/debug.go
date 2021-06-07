@@ -17,6 +17,10 @@ type Debug struct {
 	debugSub *bot.Subcommand
 }
 
+func NewDebugCmd() *Debug {
+	return &Debug{}
+}
+
 // Setup demonstrates the CanSetup interface. This function will never be parsed
 // as a callback of any event.
 func (d *Debug) Setup(sub *bot.Subcommand) {
