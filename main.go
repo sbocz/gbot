@@ -15,29 +15,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// To run, do `BOT_TOKEN="TOKEN HERE" go run .`
-
 func main() {
 	godotenv.Load()
 
+	// Initialize all users of db
 	dbFile := os.Getenv("DATABASE_FILE")
 	db := database.NewDb(dbFile)
 	defer db.Shutdown()
 
-	token := os.Getenv("BOT_TOKEN")
-	if token == "" {
-		log.Fatalln("No $BOT_TOKEN given.")
-	}
-	prefix := os.Getenv("BOT_PREFIX")
-	if token == "" {
-		prefix = "!"
-		log.Println("No $BOT_PREFIX given. Defaulting to '!'")
-	}
-	denyListString := os.Getenv("YELL_DENYLIST")
-	denyListString = strings.ToLower(denyListString)
-	denyList := strings.Split(denyListString, ",")
-
-	cmd.Initialize(db, denyList)
 	bank, err := banking.NewBank(db)
 	if err != nil {
 		log.Fatalln(err)
@@ -46,14 +31,17 @@ func main() {
 	// Start background tasks
 	go task.PayInterest(24*time.Hour, bank)
 
-	wait, err := bot.Start(token, gbot, func(ctx *bot.Context) error {
-		ctx.HasPrefix = bot.NewPrefix(prefix)
+	// Initialize and start the bot
+	cmd.Initialize(db, fetchDenyList())
+	gbot := cmd.NewGbotCmd()
+	wait, err := bot.Start(fetchToken(), gbot, func(ctx *bot.Context) error {
+		ctx.HasPrefix = bot.NewPrefix(fetchPrefix())
 		ctx.EditableCommands = true
 		ctx.State.PreHandler = handler.New()
 		ctx.State.PreHandler.Synchronous = true
 		ctx.State.PreHandler.AddHandler(cmd.YellHandler(ctx))
 
-		ctx.MustRegisterSubcommand(&cmd.Debug{})
+		ctx.MustRegisterSubcommand(cmd.NewDebugCmd())
 		ctx.MustRegisterSubcommand(cmd.NewBankCmd(bank))
 
 		return nil
@@ -72,4 +60,26 @@ func main() {
 	if err := wait(); err != nil {
 		log.Fatalln("Gateway fatal error:", err)
 	}
+}
+
+func fetchDenyList() []string {
+	denyListString := os.Getenv("YELL_DENYLIST")
+	return strings.Split(strings.ToLower(denyListString), ",")
+}
+
+func fetchToken() string {
+	token := os.Getenv("BOT_TOKEN")
+	if token == "" {
+		log.Fatalln("No $BOT_TOKEN given.")
+	}
+	return token
+}
+
+func fetchPrefix() string {
+	prefix := os.Getenv("BOT_PREFIX")
+	if prefix == "" {
+		prefix = "!"
+		log.Println("No $BOT_PREFIX given. Defaulting to '!'")
+	}
+	return prefix
 }
