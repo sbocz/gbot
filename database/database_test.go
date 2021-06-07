@@ -17,13 +17,15 @@ type TestStructure struct {
 
 var _ = Describe("Database", func() {
 	var (
-		testKey        = "Key"
-		unwrittenKey   = "unwrittenKey"
-		testString     = "FakeString"
-		testInt        = 123
-		testFloat      = 1.3
-		testBucketType = database.Tests
-		databaseFile   = "testing.db"
+		testKey             = "Key"
+		unwrittenKey        = "unwrittenKey"
+		testString          = "FakeString"
+		testInt             = 123
+		testFloat           = 1.3
+		testBucketType      = database.BucketType("testBucket")
+		testEmptyBucketType = database.BucketType("emptyBucket")
+		testKeysBucketType  = database.BucketType("keysBucket")
+		databaseFile        = "testing.db"
 
 		testStruct = &TestStructure{
 			StringField:        testString,
@@ -120,6 +122,33 @@ var _ = Describe("Database", func() {
 			It("should return nil", func() {
 				result, _ := sut.Get(testBucketType, unwrittenKey)
 				Expect(result).To(BeNil())
+			})
+		})
+	})
+
+	Context("Keys", func() {
+		When("there are no keys", func() {
+			BeforeEach(func() {
+				sut.CreateBucketIfNotExists(testEmptyBucketType)
+			})
+			It("should return an empty slice", func() {
+				keys, err := sut.Keys(testEmptyBucketType)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(len(keys)).To(BeZero())
+			})
+		})
+		When("there are multiple keys", func() {
+			BeforeEach(func() {
+				sut.CreateBucketIfNotExists(testKeysBucketType)
+				sut.Put(testKeysBucketType, "foo", "bar")
+				sut.Put(testKeysBucketType, "baz", "qux")
+			})
+			It("should return all keys", func() {
+				keys, err := sut.Keys(testKeysBucketType)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(len(keys)).To(Equal(2))
+				Expect(keys).To(ContainElement([]byte("foo")))
+				Expect(keys).To(ContainElement([]byte("baz")))
 			})
 		})
 	})

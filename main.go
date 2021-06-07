@@ -4,9 +4,11 @@ import (
 	"gbot/cmd"
 	"gbot/commerce/banking"
 	"gbot/database"
+	"gbot/task"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/diamondburned/arikawa/v2/bot"
 	"github.com/diamondburned/arikawa/v2/utils/handler"
@@ -41,7 +43,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	gbot := cmd.NewBot()
+	// Start background tasks
+	go task.PayInterest(24*time.Hour, bank)
 
 	wait, err := bot.Start(token, gbot, func(ctx *bot.Context) error {
 		ctx.HasPrefix = bot.NewPrefix(prefix)

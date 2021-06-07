@@ -7,7 +7,6 @@ import (
 
 	"github.com/diamondburned/arikawa/v2/bot"
 	"github.com/diamondburned/arikawa/v2/bot/extras/arguments"
-	"github.com/diamondburned/arikawa/v2/bot/extras/middlewares"
 	"github.com/diamondburned/arikawa/v2/gateway"
 )
 
@@ -33,9 +32,7 @@ func (b *BankCmd) Setup(sub *bot.Subcommand) {
 
 	sub.ChangeCommandInfo("Tip", "", "Tip a user a certain value. eg. 'bank tip @Esbee 100'")
 	sub.ChangeCommandInfo("Balance", "", "Display your current balance")
-
-	sub.Hide("Fund")
-	sub.AddMiddleware("Fund", middlewares.AdminOnly(b.Context))
+	sub.ChangeCommandInfo("List", "", "List all bank accounts")
 }
 
 func (b *BankCmd) Help(*gateway.MessageCreateEvent) (string, error) {
@@ -71,13 +68,6 @@ func (b *BankCmd) Balance(m *gateway.MessageCreateEvent) (string, error) {
 	return commerce.Currency(val).String(), nil
 }
 
-// Admin only command to add funds to the caller of this command.
-// Useful until ways of acquiring money are added to the bot.
-func (b *BankCmd) Fund(m *gateway.MessageCreateEvent, value int) (string, error) {
-	err := b.bank.Deposit(m.Author.ID, value)
-	if err != nil {
-		return "", err
-	}
-
-	return "donezo", nil
+func (b *BankCmd) List(m *gateway.MessageCreateEvent) (string, error) {
+	return b.bank.PrintBalances()
 }

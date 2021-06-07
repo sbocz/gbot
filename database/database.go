@@ -88,6 +88,27 @@ func (db *DB) Get(bucketType BucketType, key string) ([]byte, error) {
 	return result, nil
 }
 
+func (db *DB) Keys(bucketType BucketType) ([][]byte, error) {
+	result := make([][]byte, 0)
+
+	err := db.boltDb.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketType))
+		if bucket == nil {
+			return fmt.Errorf("Bucket %q not found!", bucketType)
+		}
+
+		return bucket.ForEach(func(key []byte, _ []byte) error {
+			result = append(result, key)
+			return nil
+		})
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("Error iterating over all keys from bucket %s: %s", bucketType, err)
+	}
+	return result, nil
+}
+
 func (db *DB) PutRandom(bucketType BucketType, value interface{}) error {
 	return db.Put(bucketType, string(NewHashedKey(value)), value)
 }

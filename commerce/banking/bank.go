@@ -1,9 +1,13 @@
 package banking
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"gbot/commerce"
 	"gbot/database"
+	"gbot/util"
+	"text/tabwriter"
 	"time"
 
 	"github.com/diamondburned/arikawa/v2/discord"
@@ -78,18 +82,19 @@ func (b *Bank) Withdraw(userId discord.UserID, value int) error {
 	return b.SaveAccount(account)
 }
 
-// Pays interest for the specified account
-func (b *Bank) PayInterest(userId discord.UserID) error {
-	account, err := b.FetchAccount(userId)
+// Pays interest for all accounts
+func (b *Bank) PayInterest() error {
+	userIds, err := b.fetchUserIds()
 	if err != nil {
-		return fmt.Errorf("could not pay interest: %v", err)
+		return err
 	}
-
-	interest := account.CalculateInterest(INTEREST_PERIOD)
-	account.Balance += interest
-	account.LastInterest = time.Now().UTC()
-
-	return b.SaveAccount(account)
+	for _, userId := range userIds {
+		err = b.payAccountInterest(userId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Fetch account from database. Create account if one does not exist.
@@ -119,4 +124,68 @@ func (b *Bank) FetchAccount(userId discord.UserID) (*Account, error) {
 
 func (b *Bank) SaveAccount(account *Account) error {
 	return b.accountBucket.Put(fmt.Sprint(account.UserId), account)
+}
+
+// Prints a table of the balances for all accounts.
+// Returns a string for the textual table and an error if one occurred while retrieving any account.
+func (b *Bank) PrintBalances() (string, error) {
+	balances, err := b.fetchBalances()
+	if err != nil {
+		return "", fmt.Errorf("Error retrieving bank balances: %v", err)
+	}
+	var buffer bytes.Buffer
+	w := tabwriter.NewWriter(&buffer, 0, 0, 3, ' ', 0)
+	fmt.Fprintf(w, "User\tBalance\n")
+
+	for userId, balance := range balances {
+		fmt.Fprintf(w, "%s\t%v\n",
+			userId.Mention(),
+			commerce.Currency(balance))
+	}
+	w.Flush()
+	return buffer.String(), nil
+}
+
+func (b *Bank) fetchUserIds() ([]discord.UserID, error) {
+	keys, err := b.accountBucket.Keys()
+	if err != nil {
+		return nil, err
+	}
+	userIds, err := util.UserIdsFromBytes(keys)
+	if err != nil {
+		return nil, err
+	}
+	return userIds, nil
+}
+
+func (b *Bank) payAccountInterest(userId discord.UserID) error {
+	account, err := b.FetchAccount(userId)
+	if err != nil {
+		return fmt.Errorf("Could not pay interest: %v", err)
+	}
+
+	interest := account.CalculateInterest(INTEREST_PERIOD)
+	if interest < 1 {
+		return nil
+	}
+	account.Balance += interest
+	account.LastInterest = time.Now().UTC()
+
+	return b.SaveAccount(account)
+}
+
+func (b *Bank) fetchBalances() (map[discord.UserID]int, error) {
+	userIds, err := b.fetchUserIds()
+	if err != nil {
+		return nil, err
+	}
+	balances := make(map[discord.UserID]int)
+	for _, userId := range userIds {
+		balance, err := b.Balance(userId)
+		if err != nil {
+			return nil, err
+		}
+		balances[userId] = balance
+	}
+	return balances, nil
 }
